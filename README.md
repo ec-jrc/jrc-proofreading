@@ -14,7 +14,7 @@ The use-case scenario is that a document owner runs the macro as a final check t
 - [License.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/Licence.txt)
 - [JRC Technical Report](https://github.com/ec-jrc/jrc-proofreading/blob/main/JRC128603%20ProofChem.pdf), *ProofChem a macro for automated proofreading of chemical formulae*, JRC128603, 2022.
 - [a demo video](https://github.com/ec-jrc/jrc-proofreading/blob/main/demo%20video%20ProofChem.mp4) (10 MB download)
-- [ProofChem-VBA-macro.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/ProofChem-VBA-macro.txt) (or later versions, in the future)
+- [ProofChem-VBA-macro.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/ProofChem-VBA-macro.txt)
 
 ## Installation and usage
 
