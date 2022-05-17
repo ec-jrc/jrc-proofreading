@@ -11,10 +11,10 @@ The use-case scenario is that a document owner runs the macro as a final check t
 ## Repo contents
 
 - this README.md
-- License.txt
-- JRC Technical Report, *ProofChem a macro for automated proofreading of chemical formulae*, JRC128603, 2022.
-- ProofChem macro v2_2.txt (or later versions, in the future)
+- [License.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/Licence.txt)
+- [JRC Technical Report](https://github.com/ec-jrc/jrc-proofreading/blob/main/JRC128603%20ProofChem.pdf), *ProofChem a macro for automated proofreading of chemical formulae*, JRC128603, 2022.
+- [ProofChem macro v2_2.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/ProofChem%20macro%20v2_2.txt) (or later versions, in the future)
 
 ## Installation and usage
 
-Instructions to install the macro and a guide to its use can be found in the JRC technical report mentioned above.
+Instructions to install the macro and a guide to its use can be found in the [JRC technical report](https://github.com/ec-jrc/jrc-proofreading/blob/main/JRC128603%20ProofChem.pdf) mentioned above.
