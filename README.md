@@ -19,3 +19,7 @@ The use-case scenario is that a document owner runs the macro as a final check t
 ## Installation and usage
 
 Instructions to install the macro and a guide to its use can be found in the [JRC technical report](https://github.com/ec-jrc/jrc-proofreading/blob/main/JRC128603%20ProofChem.pdf) mentioned above.
+
+## Contact person
+
+[David Anderson](mailto:david.anderson@ec.europa.eu), European Commission, Joint Research Centre, Geel, Belgium.
