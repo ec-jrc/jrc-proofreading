@@ -5,7 +5,9 @@
 [![GitHub commit](https://img.shields.io/github/last-commit/ec-jrc/COVID-19)](https://github.com/ec-jrc/COVID-19/commits/master)
 
 ## Introduction
-ProofChem is a one-click macro in VBA to automatically detect all chemical formulae in Microsoft Word documents and automatically format each term with the correct subscripts, superscripts, and italics. See [this video](https://youtu.be/r5G0IRT8YlU) on YouTube for a short demo.
+ProofChem is a one-click macro in VBA to automatically detect all chemical formulae in Microsoft Word documents and automatically format each term with the correct subscripts, superscripts, and italics. 
+
+See [this video](https://youtu.be/r5G0IRT8YlU) on YouTube for a short demo.
 
 ## Repo contents
 
