@@ -9,16 +9,13 @@ ProofChem is a one-click macro in VBA to automatically detect all chemical formu
 
 See [this video](https://youtu.be/r5G0IRT8YlU) on YouTube for a short demo.
 
-## Repo contents
+## License
 
-- this README.md
-- [License.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/Licence.txt)
-- [JRC Technical Report](https://github.com/ec-jrc/jrc-proofreading/blob/main/JRC128603%20ProofChem.pdf), *ProofChem a macro for automated proofreading of chemical formulae*, JRC128603, 2022.
-- [ProofChem-VBA-macro.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/ProofChem-VBA-macro.txt)
+This software is licensed under EUPL v1.2 ([License.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/Licence.txt))
 
 ## Installation and usage
 
-Instructions to install the [macro](https://github.com/ec-jrc/jrc-proofreading/blob/main/ProofChem-VBA-macro.txt) and a guide to its use can be found in the [JRC technical report](https://github.com/ec-jrc/jrc-proofreading/blob/main/JRC128603%20ProofChem.pdf) mentioned above.
+Instructions to install the [macro](https://github.com/ec-jrc/jrc-proofreading/blob/main/ProofChem-VBA-macro.txt) and a guide to its use can be found in this [JRC technical report](https://github.com/ec-jrc/jrc-proofreading/blob/main/JRC128603%20ProofChem.pdf).
 
 ## Author
 
