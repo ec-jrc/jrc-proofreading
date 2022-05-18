@@ -11,7 +11,7 @@ See [this video](https://youtu.be/r5G0IRT8YlU) on YouTube for a short demo.
 
 ## License
 
-This software is licensed under EUPL v1.2 ([License.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/Licence.txt))
+This software is licensed under the open-source EUPL v1.2 ([License.txt](https://github.com/ec-jrc/jrc-proofreading/blob/main/Licence.txt))
 
 ## Installation and usage
 
