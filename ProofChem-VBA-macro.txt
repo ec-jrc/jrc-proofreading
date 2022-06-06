@@ -109,13 +109,13 @@ Sub ProofChem()
     ' ===================================
     ' Check user has selected some text
     ' ===================================
-    SelectionText = Selection.Range.text
+    SelectionText = Selection.Range.Text
     If Len(SelectionText) = 0 Then
         Answer = MsgBox("No text was selected." + vbCr + "Scan entire document?", _
                     vbQuestion + vbYesNo + vbDefaultButton1)
         If Answer = vbYes Then
             ActiveDocument.Range.Select
-            SelectionText = Selection.Range.text
+            SelectionText = Selection.Range.Text
             Selection.HomeKey Unit:=wdStory   ' move cursor to top
         Else
             Exit Sub
@@ -176,9 +176,9 @@ Sub ProofChem()
     ' =============
     ' Update user
     ' =============
-    Msg = "Total words analysed:" + str(TotalWords)
-    Msg = Msg + vbCr + vbCr + "Chemical formulae found:" + str(1 + UBound(aPossible_Formulae))
-    Msg = Msg + vbCr + vbCr + "No. reformatted:" + str(nReformatted)
+    Msg = "Total words analysed:" + Str(TotalWords)
+    Msg = Msg + vbCr + vbCr + "Chemical formulae found:" + Str(1 + UBound(aPossible_Formulae))
+    Msg = Msg + vbCr + vbCr + "No. reformatted:" + Str(nReformatted)
     MsgBox (Msg)
     
     
@@ -591,6 +591,7 @@ Sub FormatFormulae()
                     
         If ReFormatted Then
             nReformatted = nReformatted + 1
+            Selection.Range.HighlightColorIndex = wdBrightGreen
         End If
         Selection.MoveRight Unit:=wdWord
         
@@ -1040,10 +1041,10 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
                                 For u = 1 To (k - 1)
                                     Filler = Filler + "u"
                                 Next u
-                                Debug.Print j, k, Wrd, WrdCode, FmtCode
+                                If DebugMode Then Debug.Print j, k, Wrd, WrdCode, FmtCode
                                 Filler = Left(FmtCode, j + MatchLength - k - 1) + Filler
                                 FmtCode = Filler + Right(FmtCode, Len(FmtCode) - Len(Filler))
-                                Debug.Print j, k, Wrd, WrdCode, FmtCode
+                                If DebugMode Then Debug.Print j, k, Wrd, WrdCode, FmtCode
                                 Exit For
                             End If
                         End If
@@ -1060,43 +1061,6 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
     GetFrmCode = FmtCode
     
 End Function
-
-
-Sub debug_ASCW_character_codes()
-            
-    ' Only used for debugging strange characters/delimiters.
-    
-    ' If you select some text and runs this macro, it displays a
-    ' message box with the ASCII code of each character.
-            
-    Dim Wrd, Ltr, Msg, aCode, Fnt As String
-    Dim i As Long
-    Dim myRange As Range
-    
-    ' Get selected text
-    If Selection.Start = Selection.End Then
-        Selection.MoveLeft Unit:=wdWord, Count:=1
-        Selection.MoveEnd Unit:=wdWord, Count:=1
-    End If
-    Set myRange = Selection.Range
-    Wrd = Selection.Range.text
-    
-    ' Header
-    Msg = "Char" + vbTab + "AscW" + vbTab + "Font" + vbCr + vbCr
-    
-    ' Check each letter in the word
-    For i = 1 To Len(Wrd)
-        Ltr = Mid(Wrd, i, 1)
-        aCode = Trim(str(AscW(Ltr)))
-        Fnt = myRange.Characters(i).Font.Name
-        Debug.Print Ltr, aCode, Fnt
-        Msg = Msg + Ltr + vbTab + aCode + vbTab + Fnt + vbCr
-    Next i
-    
-    ' Display results in message box
-    MsgBox (Msg)
-    
-End Sub
 
 
 Function getElements() As String()
@@ -1494,3 +1458,5 @@ Function getIsotopes() As String()
     getIsotopes = ArrayIsotopes
     
 End Function
+
+
