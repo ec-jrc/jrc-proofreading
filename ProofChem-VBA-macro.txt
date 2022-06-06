@@ -2,14 +2,15 @@
 ' ===========================================================================
 '                         © European Commission 2022
 
-' Licensed under the EUPL, Version 1.2 or – as soon they will be approved by the European Commission
-' – subsequent versions of the EUPL (the "Licence");
+' Licensed under the EUPL, Version 1.2 or – as soon they will be approved by
+' the European Commission – subsequent versions of the EUPL (the "Licence");
 ' You may not use this work except in compliance with the Licence.
 ' You may obtain a copy of the Licence at:
 '     https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
-' Unless required by applicable law or agreed to in writing, software distributed
-' under the Licence is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
-' either express or implied. See the Licence for the specific language governing permissions and
+' Unless required by applicable law or agreed to in writing, software
+' distributed under the Licence is distributed on an "AS IS" basis,
+' WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+' See the Licence for the specific language governing permissions and
 ' limitations under the Licence.
 '
 '                Report bugs to: david.anderson@ec.europa.eu
@@ -18,8 +19,11 @@
 '
 '   Version History:
 '
+'   2.3     06/06/2022  Using tracked changes instead of red font colour.
+'                       Added ignore hyperlinks.
+'
 '   2.2     16/05/2022  EUPL license text added.
-'   
+'
 '   2.1     25/03/2022  Added aqueous ions and Lanthanide ions
 '
 '   2.0     24/03/2022  Added boolean switches to turn on/off checking
@@ -72,6 +76,9 @@ Global IsotopeThreshold, nReformatted As Long
 Global AllWords() As String
 Global aPossible_Formulae As Variant
 Global aWrdCodes As Variant
+Global TrackedChangesOrigState As Boolean
+
+    
  
 
 Sub ProofChem()
@@ -85,6 +92,7 @@ Sub ProofChem()
     CheckOxidationStates = True
     VIalwaysElements = True
     Options.DefaultHighlightColorIndex = wdYellow
+    TrackedChangesOrigState = ActiveDocument.TrackRevisions
     
     
     ' =============================
@@ -530,6 +538,7 @@ Sub FormatFormulae()
     
     ' Remove all prior highlighting in document
     Set myRange = ActiveDocument.Content
+    ActiveDocument.TrackRevisions = False
     myRange.HighlightColorIndex = wdNoHighlight
     
     
@@ -541,9 +550,13 @@ Sub FormatFormulae()
         Wrd = aPossible_Formulae(i)
         WrdCode = aWrdCodes(i)
         
-        ' Find and select the word
-       Selection.Find.Execute FindText:=Wrd, Forward:=True, MatchWholeWord:=True, MatchCase:=True
-        
+        ' Find, select and highlight (yellow) the word
+        Selection.Find.Execute FindText:=Wrd, Forward:=True, MatchWholeWord:=True, MatchCase:=True
+        If Selection.Hyperlinks.Count > 0 Then
+            GoTo Skipword
+        End If
+        ActiveDocument.TrackRevisions = False
+        Selection.Range.HighlightColorIndex = wdYellow
         
         ' ==========================
         ' Get FmtCode from WrdCode
@@ -556,6 +569,7 @@ Sub FormatFormulae()
         ' ===================================
         j = 1
         ReFormatted = False
+        ActiveDocument.TrackRevisions = True
         For Each Char In Selection.Characters
             Fmt = Mid(FmtCode, j, 1)
             If Fmt = "d" And Char.Font.Subscript = False Then
@@ -574,28 +588,21 @@ Sub FormatFormulae()
             End If
             j = j + 1
         Next Char  ' next character in word
-        
-        
-        ' =================================
-        ' Highlight all chemical formulae
-        ' =================================
+                    
         If ReFormatted Then
             nReformatted = nReformatted + 1
-            Selection.Range.HighlightColorIndex = wdYellow
-            Selection.Range.Font.Color = wdColorRed
-        Else
-            Selection.Range.HighlightColorIndex = wdYellow
         End If
+        Selection.MoveRight Unit:=wdWord
         
         ' Debugging
         If DebugMode Then
             Debug.Print Wrd, WrdCode, FmtCode
         End If
-                
-        Selection.MoveRight Unit:=wdWord
-    
+        
+Skipword:
     Next i  ' next word in array of formulae
     
+    ActiveDocument.TrackRevisions = TrackedChangesOrigState
 
 End Sub
 
@@ -1487,7 +1494,3 @@ Function getIsotopes() As String()
     getIsotopes = ArrayIsotopes
     
 End Function
-
-
-
-
