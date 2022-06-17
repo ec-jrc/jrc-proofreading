@@ -7,7 +7,7 @@
 ## Introduction
 ProofChem is a one-click macro in VBA to automatically detect all chemical formulae in Microsoft Word documents and automatically format each term with the correct subscripts, superscripts, and italics. 
 
-See [this video](https://youtu.be/xos-AT41LUE) on YouTube for a short demo.
+See [this video](https://youtu.be/r5G0IRT8YlU) on YouTube for a short demo.
 
 ## License
 
