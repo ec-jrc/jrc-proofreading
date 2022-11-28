@@ -19,6 +19,10 @@
 '
 '   Version History:
 '
+'   2.4     27/11/2022  Squashed small bugs: semi-colons, uneven brackets,
+'                       isotope notation <element>-<A>, e.g. Ra-226,
+'                       and oxidation states in parentheses, e.g. Cr(III)
+'
 '   2.3     06/06/2022  Using tracked changes instead of red font colour.
 '                       Added ignore hyperlinks.
 '
@@ -73,7 +77,7 @@ Global ArrayAffixes() As String
 Global DebugMode, SearchForIsotopes As Boolean
 Global VIalwaysElements, CheckOxidationStates As Boolean
 Global IsotopeThreshold, nReformatted As Long
-Global AllWords() As String
+Global allwords() As String
 Global aPossible_Formulae As Variant
 Global aWrdCodes As Variant
 Global TrackedChangesOrigState As Boolean
@@ -127,8 +131,8 @@ Sub ProofChem()
     ' ============================================
     ' Parse selected text into an array of words
     ' ============================================
-    AllWords = ParseWords(SelectionText)
-    TotalWords = 1 + UBound(AllWords)
+    allwords = ParseWords(SelectionText)
+    TotalWords = 1 + UBound(allwords)
     
 
     ' ================================
@@ -176,9 +180,9 @@ Sub ProofChem()
     ' =============
     ' Update user
     ' =============
-    Msg = "Total words analysed:" + Str(TotalWords)
-    Msg = Msg + vbCr + vbCr + "Chemical formulae found:" + Str(1 + UBound(aPossible_Formulae))
-    Msg = Msg + vbCr + vbCr + "No. reformatted:" + Str(nReformatted)
+    Msg = "Total words analysed:" + str(TotalWords)
+    Msg = Msg + vbCr + vbCr + "Chemical formulae found:" + str(1 + UBound(aPossible_Formulae))
+    Msg = Msg + vbCr + vbCr + "No. reformatted:" + str(nReformatted)
     MsgBox (Msg)
     
     
@@ -198,7 +202,7 @@ Function ParseWords(ByVal SelectionText As String) As String()
     
     Dim ArrayofDelimiters() As Variant
     Dim tDelimNew, tDelimOld As Variant
-    Dim AllWords() As Variant
+    Dim allwords() As Variant
     
     '   Unicode 7: used as a separator in Word tables
     '   Unicode 11: line break
@@ -240,7 +244,7 @@ Sub GetArrayFormulae()
     
     ' Iterate through each word and analyse each word with a set of rules.
     '    Words that pass the tests are added to list of chemical formulae.
-    For Each Wrd In AllWords
+    For Each Wrd In allwords
     
         ' Initialisation
         KeepIt = True
@@ -253,13 +257,30 @@ Sub GetArrayFormulae()
             If Left(Wrd, 1) = "." Then Wrd = Right(Wrd, Len(Wrd) - 1)
             If Right(Wrd, 1) = "." Then Wrd = Left(Wrd, Len(Wrd) - 1)
     
-            ' Trim any parentheses at the ends
+            ' Trim parentheses if at both ends
             If Left(Wrd, 1) = "(" And Right(Wrd, 1) = ")" Then
                     If InStr(Mid(Wrd, 2, Len(Wrd) - 2), "(") = 0 Then
                         Wrd = Mid(Wrd, 2, Len(Wrd) - 2)
                     End If
             End If
-    
+            
+            ' Trim any semi-colon at the ends
+            If Left(Wrd, 1) = ";" Then
+                Wrd = Right(Wrd, Len(Wrd) - 1)
+            End If
+            If Right(Wrd, 1) = ";" Then
+                Wrd = Left(Wrd, Len(Wrd) - 1)
+            End If
+            
+            ' Remove parentheses if uneven number
+            If CountChars(Wrd, "(") <> CountChars(Wrd, ")") Then
+                If Left(Wrd, 1) = "(" Then
+                    Wrd = Right(Wrd, Len(Wrd) - 1)
+                ElseIf Right(Wrd, 1) = ")" Then
+                    Wrd = Left(Wrd, Len(Wrd) - 1)
+                End If
+            End If
+            
             ' Trim any square brackets at the ends
             If Left(Wrd, 1) = "[" And Right(Wrd, 1) = "]" Then
                     If InStr(Mid(Wrd, 2, Len(Wrd) - 2), "[") = 0 Then
@@ -551,7 +572,7 @@ Sub FormatFormulae()
         WrdCode = aWrdCodes(i)
         
         ' Find, select and highlight (yellow) the word
-        Selection.Find.Execute FindText:=Wrd, Forward:=True, MatchWholeWord:=True, MatchCase:=True
+        Selection.Find.Execute FindText:=Wrd, Forward:=True, MatchWholeWord:=True, MatchCase:=True, MatchWildcards:=False
         If Selection.Hyperlinks.Count > 0 Then
             GoTo Skipword
         End If
@@ -659,7 +680,7 @@ End Function
 
 Function GetWrdCode(ByVal Wrd As String) As String
     
-    ' This function categorising each character in a chemical formula:
+    ' This function categorises each character in a chemical formula:
     
     '   E = uppercase letter (Element)
     '   e = lowercase letter
@@ -681,7 +702,7 @@ Function GetWrdCode(ByVal Wrd As String) As String
     ' Unicode   https://www.fileformat.info/info/unicode/char/search.htm
         
     Dim WrdCode, charCategory, Crib, Ligand, Wrd2  As String
-    Dim chrASCII, j, k, L As Long
+    Dim chrASCII, j, k, l As Long
     Dim Affix, RomNum As Variant
     Dim ElementPreceding, OnlyRomannumerals As Boolean
     
@@ -790,13 +811,13 @@ Function GetWrdCode(ByVal Wrd As String) As String
     For j = LBound(ArrayLigands) To UBound(ArrayLigands)
         Ligand = ArrayLigands(j)
         ' If word includes ligand abbreviation, replace characters in WrdCode with 'L'
-        L = InStr(Wrd, Ligand)
-        If L > 0 And Ligand <> "" Then
+        l = InStr(Wrd, Ligand)
+        If l > 0 And Ligand <> "" Then
             Crib = ""
             For k = 1 To Len(Ligand)
                 Crib = Crib + "L"
             Next k
-                WrdCode = Left(WrdCode, L - 1) + Crib + Right(WrdCode, Len(WrdCode) - L - k + 2)
+                WrdCode = Left(WrdCode, l - 1) + Crib + Right(WrdCode, Len(WrdCode) - l - k + 2)
         End If
     Next j
     
@@ -808,6 +829,11 @@ Function GetWrdCode(ByVal Wrd As String) As String
     Wrd2 = ReplaceRndSqrBrackets(Wrd)
     For Each RomNum In Array("-IV", "-III", "-II", "-I", "0", "I", "II", "III", "IV", "V", "VI", "VII", "VIII")
         If Wrd2 = RomNum Then OnlyRomannumerals = True
+    Next RomNum
+    
+    For Each RomNum In Array("(-IV)", "(-III)", "(-II)", "(-I)", "(0)", "(I)", "(II)", _
+        "(III)", "(IV)", "(V)", "(VI)", "(VII)", "(VIII)")
+        If InStr(Wrd, RomNum) > 0 Then OnlyRomannumerals = True
     Next RomNum
     
     If Not OnlyRomannumerals And CheckOxidationStates Then    ' only format Roman numerals if other elements present
@@ -891,7 +917,7 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
     '
     ' So GetFrmCode("H2O") would return "ndn"
     
-    Dim chrASCII, c, j, k, u, FirstElement, MatchLength, ElementLength As Long
+    Dim chrASCII, C, j, k, u, FirstElement, MatchLength, ElementLength As Long
     Dim Wrd2, Ltr, LtrCode, LtrFmt, FmtCode, WrdCodeSimple, WrdCodeSimple2 As String
     Dim Charac, Crib, Filler, charac_ASCII, charCategory As String
     Dim IsotopeFound As Boolean
@@ -910,7 +936,7 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
     ' ======================================================
     ' If last character is plus or minus sign, it's an ion
     ' ======================================================
-    If Mid(WrdCode, Len(WrdCode), 1) = "S" Then
+    If Right(WrdCode, 1) = "S" Then
     
         ' Monoatomic ions, e.g. Na+, F-, Mg2+, N3-
         If WrdCodeSimple = "ES" Or WrdCodeSimple = "ENS" Then
@@ -976,7 +1002,20 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
            FmtCode = Replace(FmtCode, "e", "n")
         End If
     
-    Else    ' not an ion or an isotope
+    ElseIf WrdCodeSimple2 = "ESN" And InStr(Wrd, "-") > 0 Then
+        ' Check if alternative isotope notation, e.g. Ra-226 instead of 226Ra
+        Wrd2 = ""
+        Wrd2 = Wrd2 & Right(Wrd, InStr(Wrd, "-"))
+        Wrd2 = Wrd2 & Left(Wrd, InStr(Wrd, "-") - 1)
+        If IsInArray(Wrd2, ArrayIsotopes) Then
+           ' format as isotope
+           FmtCode = Replace(FmtCode, "N", "n")
+           FmtCode = Replace(FmtCode, "E", "n")
+           FmtCode = Replace(FmtCode, "e", "n")
+        End If
+    End If
+        
+    If WrdCodeSimple2 <> "NE" Then    ' not an ion or an isotope
         
         ' For decimal subscripts, replace point with number
         FmtCode = Replace(FmtCode, "NPN", "NNN")
@@ -1460,3 +1499,17 @@ Function getIsotopes() As String()
 End Function
 
 
+Private Function CountChars(ByVal WorkPara As String, ByVal SearchString As String) As Integer
+    
+    Dim Count As Integer
+    Dim Found As Integer
+
+    Count = 0
+    Found = InStr(WorkPara, SearchString)
+    While Found <> 0
+        Count = Count + 1
+        Found = InStr(Found + 1, WorkPara, SearchString)
+    Wend
+    CountChars = Count
+    
+End Function
