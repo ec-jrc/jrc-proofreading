@@ -19,6 +19,8 @@
 '
 '   Version History:
 '
+'   2.5     28/11/2022  Squashed bug: reset Selection.Find.Highlight
+'
 '   2.4     27/11/2022  Squashed small bugs: semi-colons, uneven brackets,
 '                       isotope notation <element>-<A>, e.g. Ra-226,
 '                       and oxidation states in parentheses, e.g. Cr(III)
@@ -113,13 +115,13 @@ Sub ProofChem()
     ' ===================================
     ' Check user has selected some text
     ' ===================================
-    SelectionText = Selection.Range.Text
+    SelectionText = Selection.Range.text
     If Len(SelectionText) = 0 Then
         Answer = MsgBox("No text was selected." + vbCr + "Scan entire document?", _
                     vbQuestion + vbYesNo + vbDefaultButton1)
         If Answer = vbYes Then
             ActiveDocument.Range.Select
-            SelectionText = Selection.Range.Text
+            SelectionText = Selection.Range.text
             Selection.HomeKey Unit:=wdStory   ' move cursor to top
         Else
             Exit Sub
@@ -173,6 +175,7 @@ Sub ProofChem()
     SelectedRange.Select
     Selection.MoveLeft Unit:=wdWord
     Wrd = aPossible_Formulae(LBound(aPossible_Formulae))
+    Selection.Find.Highlight = wdUndefined
     Selection.Find.Execute FindText:=Wrd, Forward:=True, MatchWholeWord:=True, MatchCase:=True
     Selection.MoveLeft Unit:=wdWord
     
@@ -572,7 +575,9 @@ Sub FormatFormulae()
         WrdCode = aWrdCodes(i)
         
         ' Find, select and highlight (yellow) the word
-        Selection.Find.Execute FindText:=Wrd, Forward:=True, MatchWholeWord:=True, MatchCase:=True, MatchWildcards:=False
+        Selection.Find.Highlight = wdUndefined
+        Selection.Find.Execute FindText:=Wrd, Forward:=True, MatchWholeWord:=True, MatchCase:=True, _
+            MatchWildcards:=False
         If Selection.Hyperlinks.Count > 0 Then
             GoTo Skipword
         End If
@@ -1513,3 +1518,5 @@ Private Function CountChars(ByVal WorkPara As String, ByVal SearchString As Stri
     CountChars = Count
     
 End Function
+
+
