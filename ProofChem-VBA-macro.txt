@@ -1,6 +1,6 @@
 '
 ' ===========================================================================
-'                         © European Commission 2022
+'                         © European Commission 2023
 
 ' Licensed under the EUPL, Version 1.2 or – as soon they will be approved by
 ' the European Commission – subsequent versions of the EUPL (the "Licence");
@@ -18,6 +18,10 @@
 '
 '
 '   Version History:
+'
+'   2.6     09/04/2023  Final message box only shown if text > 1000 characters.
+'                       Added switch for highlighting: HighlightFormulae = True
+'                       (To deactivate, replace with: HighlightFormulae = False)
 '
 '   2.5     28/11/2022  Squashed bug: reset Selection.Find.Highlight
 '
@@ -76,13 +80,14 @@ Global ArrayIsotopes() As String
 Global ArrayPolyatomic() As String
 Global ArrayLigands() As String
 Global ArrayAffixes() As String
+Global allwords() As String
 Global DebugMode, SearchForIsotopes As Boolean
 Global VIalwaysElements, CheckOxidationStates As Boolean
+Global SelectionIsLong, TrackedChangesOrigState As Boolean
+Global HighlightFormulae As Boolean
 Global IsotopeThreshold, nReformatted As Long
-Global allwords() As String
 Global aPossible_Formulae As Variant
 Global aWrdCodes As Variant
-Global TrackedChangesOrigState As Boolean
 
     
  
@@ -92,6 +97,7 @@ Sub ProofChem()
     ' =============================
     ' Initialise Global Variables
     ' =============================
+    HighlightFormulae = True   ' use False to deactivate highlighting of formulae
     DebugMode = False
     SearchForIsotopes = True
     IsotopeThreshold = 20
@@ -115,20 +121,28 @@ Sub ProofChem()
     ' ===================================
     ' Check user has selected some text
     ' ===================================
-    SelectionText = Selection.Range.text
+    SelectionText = Selection.Range.Text
     If Len(SelectionText) = 0 Then
         Answer = MsgBox("No text was selected." + vbCr + "Scan entire document?", _
                     vbQuestion + vbYesNo + vbDefaultButton1)
         If Answer = vbYes Then
             ActiveDocument.Range.Select
-            SelectionText = Selection.Range.text
-            Selection.HomeKey Unit:=wdStory   ' move cursor to top
+            SelectionText = Selection.Range.Text
+            Selection.HomeKey unit:=wdStory   ' move cursor to top
         Else
             Exit Sub
         End If
     End If
     Set SelectedRange = Selection.Range
     
+    ' Determine if selection is long or not
+    ' (Final review message box will only be shown for long selections)
+    If Len(SelectedRange.Text) > 1000 Then
+        SelectionIsLong = True
+    Else
+        SelectionIsLong = False
+    End If
+        
         
     ' ============================================
     ' Parse selected text into an array of words
@@ -173,20 +187,22 @@ Sub ProofChem()
     ' Return cursor to first term at beginning of selection
     ' ========================================================
     SelectedRange.Select
-    Selection.MoveLeft Unit:=wdWord
+    Selection.MoveLeft unit:=wdWord
     Wrd = aPossible_Formulae(LBound(aPossible_Formulae))
     Selection.Find.Highlight = wdUndefined
     Selection.Find.Execute FindText:=Wrd, Forward:=True, MatchWholeWord:=True, MatchCase:=True
-    Selection.MoveLeft Unit:=wdWord
+    Selection.MoveLeft unit:=wdWord
     
     
     ' =============
     ' Update user
     ' =============
-    Msg = "Total words analysed:" + str(TotalWords)
-    Msg = Msg + vbCr + vbCr + "Chemical formulae found:" + str(1 + UBound(aPossible_Formulae))
-    Msg = Msg + vbCr + vbCr + "No. reformatted:" + str(nReformatted)
-    MsgBox (Msg)
+    If SelectionIsLong Then
+        Msg = "Total words analysed:" + str(TotalWords)
+        Msg = Msg + vbCr + vbCr + "Chemical formulae found:" + str(1 + UBound(aPossible_Formulae))
+        Msg = Msg + vbCr + vbCr + "No. reformatted:" + str(nReformatted)
+        MsgBox (Msg)
+    End If
     
     
 EndOfSub:
@@ -220,9 +236,9 @@ Function ParseWords(ByVal SelectionText As String) As String()
                 ChrW(8594), ChrW(10230), "(s)", "(l)", "(g)", "(aq)")
     tDelimNew = " "
     For Each tDelimOld In ArrayofDelimiters
-        SelectionText = Replace(SelectionText, tDelimOld, tDelimNew)
+        SelectionText = replace(SelectionText, tDelimOld, tDelimNew)
     Next tDelimOld
-    SelectionText = Replace(SelectionText, tDelimNew & tDelimNew, tDelimNew) ' Remove duplicate delimiters
+    SelectionText = replace(SelectionText, tDelimNew & tDelimNew, tDelimNew) ' Remove duplicate delimiters
     
     ParseWords = Split(SelectionText, tDelimNew)
 
@@ -457,9 +473,9 @@ Sub GetArrayFormulae()
                 
                 
                 ' Simply the number code
-                WrdCodeSimple = Replace(WrdCode, "Ee", "E")
-                WrdCodeSimple = Replace(WrdCodeSimple, "NNN", "N")
-                WrdCodeSimple = Replace(WrdCodeSimple, "NN", "N")
+                WrdCodeSimple = replace(WrdCode, "Ee", "E")
+                WrdCodeSimple = replace(WrdCodeSimple, "NNN", "N")
+                WrdCodeSimple = replace(WrdCodeSimple, "NN", "N")
                 
                 
                 ' ==========================================================================
@@ -497,11 +513,11 @@ Sub GetArrayFormulae()
                     Wrd2 = Wrd
                     ' For nuclear isomers, e.g. 60mCo, remove the 'm' before searching
                     If InStr(Wrd2, "m") > 1 And InStr(Wrd2, "m") < Len(Wrd) Then
-                        Wrd2 = Replace(Wrd2, "m", "")
+                        Wrd2 = replace(Wrd2, "m", "")
                     End If
                     ' For nuclear isomers, e.g. 240fPu, remove the 'f' before searching
                     If InStr(Wrd2, "f") > 1 And InStr(Wrd2, "f") < Len(Wrd) Then
-                        Wrd2 = Replace(Wrd2, "f", "")
+                        Wrd2 = replace(Wrd2, "f", "")
                     End If
                     If Not IsInArray(Wrd2, ArrayIsotopes) Then
                         KeepIt = False
@@ -554,72 +570,74 @@ Sub FormatFormulae()
     ' This routine finds each chemical formula and applies formatting
     '   according to the format code (FmtCode)
     
-    Dim myRange, Char As Range
+    Dim Char As Range
     Dim i, j As Long
     Dim Wrd, WrdCode, Fmt, FmtCode As String
     Dim ReFormatted As Boolean
     
-    
-    ' Remove all prior highlighting in document
-    Set myRange = ActiveDocument.Content
-    ActiveDocument.TrackRevisions = False
-    myRange.HighlightColorIndex = wdNoHighlight
-    
-    
     ' Go through the selected text and format each chemical formula
-    Selection.MoveLeft Unit:=wdWord
+    Selection.MoveLeft unit:=wdWord
     nReformatted = 0
+    ActiveWindow.View.ShowFormatChanges = False
+    
     For i = LBound(aPossible_Formulae) To UBound(aPossible_Formulae)
         
         Wrd = aPossible_Formulae(i)
         WrdCode = aWrdCodes(i)
         
-        ' Find, select and highlight (yellow) the word
-        Selection.Find.Highlight = wdUndefined
+        ' Find and select the matching term
         Selection.Find.Execute FindText:=Wrd, Forward:=True, MatchWholeWord:=True, MatchCase:=True, _
             MatchWildcards:=False
+        
+        ' Ignore term if part of a hyperlink
         If Selection.Hyperlinks.Count > 0 Then
             GoTo Skipword
         End If
-        ActiveDocument.TrackRevisions = False
-        Selection.Range.HighlightColorIndex = wdYellow
         
-        ' ==========================
+        ' Highlight term
+        If HighlightFormulae Then
+            ActiveDocument.TrackRevisions = False
+            Selection.Range.HighlightColorIndex = wdYellow
+            ActiveDocument.TrackRevisions = TrackedChangesOrigState
+        End If
+        
         ' Get FmtCode from WrdCode
-        ' ==========================
         FmtCode = GetFrmCode(Wrd, WrdCode)
-        
         
         ' ===================================
         ' Go through each letter and format
         ' ===================================
         j = 1
         ReFormatted = False
-        ActiveDocument.TrackRevisions = True
+        
         For Each Char In Selection.Characters
             Fmt = Mid(FmtCode, j, 1)
             If Fmt = "d" And Char.Font.Subscript = False Then
+                ActiveDocument.TrackRevisions = True
                 Char.Font.Subscript = True
                 ReFormatted = True
             ElseIf Fmt = "u" And Char.Font.Superscript = False Then
+                ActiveDocument.TrackRevisions = True
                 Char.Font.Superscript = True
                 ReFormatted = True
             ElseIf Fmt = "n" And (Char.Font.Subscript = True Or Char.Font.Superscript = True) Then
+                ActiveDocument.TrackRevisions = True
                 Char.Font.Subscript = False
                 Char.Font.Superscript = False
                 ReFormatted = True
             ElseIf Fmt = "i" And Char.Font.Italic = False Then
+                ActiveDocument.TrackRevisions = True
                 Char.Font.Italic = True
                 ReFormatted = True
             End If
             j = j + 1
         Next Char  ' next character in word
-                    
-        If ReFormatted Then
-            nReformatted = nReformatted + 1
-            Selection.Range.HighlightColorIndex = wdBrightGreen
-        End If
-        Selection.MoveRight Unit:=wdWord
+        
+        ' Count no. of terms that are re-formatted
+        If ReFormatted Then nReformatted = nReformatted + 1
+            
+        ' Go to next term
+        Selection.MoveRight unit:=wdWord
         
         ' Debugging
         If DebugMode Then
@@ -630,7 +648,9 @@ Skipword:
     Next i  ' next word in array of formulae
     
     ActiveDocument.TrackRevisions = TrackedChangesOrigState
-
+    ActiveWindow.View.ShowFormatChanges = True
+    
+    
 End Sub
 
 
@@ -640,10 +660,10 @@ Function ReplaceDash(ByVal Wrd As String) As String
     
     Dim Wrd2 As String
     
-    Wrd2 = Replace(Wrd, Chr(150), "-")  ' replace en dash with minus sign
-    Wrd2 = Replace(Wrd2, Chr(151), "-")  ' replace em dash with minus sign
-    Wrd2 = Replace(Wrd2, ChrW(8722), "-") ' replace strange dash (Unicode) with minus sign
-    Wrd2 = Replace(Wrd2, ChrW(8211), "-") ' replace strange dash (Unicode) with minus sign
+    Wrd2 = replace(Wrd, Chr(150), "-")  ' replace en dash with minus sign
+    Wrd2 = replace(Wrd2, Chr(151), "-")  ' replace em dash with minus sign
+    Wrd2 = replace(Wrd2, ChrW(8722), "-") ' replace strange dash (Unicode) with minus sign
+    Wrd2 = replace(Wrd2, ChrW(8211), "-") ' replace strange dash (Unicode) with minus sign
 
     ReplaceDash = Wrd2
 
@@ -656,10 +676,10 @@ Function ReplaceRndSqrBrackets(ByVal Wrd As String) As String
     
     Dim Wrd2 As String
     
-    Wrd2 = Replace(Wrd, "(", "")
-    Wrd2 = Replace(Wrd2, ")", "")
-    Wrd2 = Replace(Wrd2, "[", "")
-    Wrd2 = Replace(Wrd2, "]", "")
+    Wrd2 = replace(Wrd, "(", "")
+    Wrd2 = replace(Wrd2, ")", "")
+    Wrd2 = replace(Wrd2, "[", "")
+    Wrd2 = replace(Wrd2, "]", "")
 
     ReplaceRndSqrBrackets = Wrd2
 
@@ -707,7 +727,7 @@ Function GetWrdCode(ByVal Wrd As String) As String
     ' Unicode   https://www.fileformat.info/info/unicode/char/search.htm
         
     Dim WrdCode, charCategory, Crib, Ligand, Wrd2  As String
-    Dim chrASCII, j, k, l As Long
+    Dim chrASCII, j, k, L As Long
     Dim Affix, RomNum As Variant
     Dim ElementPreceding, OnlyRomannumerals As Boolean
     
@@ -816,13 +836,13 @@ Function GetWrdCode(ByVal Wrd As String) As String
     For j = LBound(ArrayLigands) To UBound(ArrayLigands)
         Ligand = ArrayLigands(j)
         ' If word includes ligand abbreviation, replace characters in WrdCode with 'L'
-        l = InStr(Wrd, Ligand)
-        If l > 0 And Ligand <> "" Then
+        L = InStr(Wrd, Ligand)
+        If L > 0 And Ligand <> "" Then
             Crib = ""
             For k = 1 To Len(Ligand)
                 Crib = Crib + "L"
             Next k
-                WrdCode = Left(WrdCode, l - 1) + Crib + Right(WrdCode, Len(WrdCode) - l - k + 2)
+                WrdCode = Left(WrdCode, L - 1) + Crib + Right(WrdCode, Len(WrdCode) - L - k + 2)
         End If
     Next j
     
@@ -922,7 +942,7 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
     '
     ' So GetFrmCode("H2O") would return "ndn"
     
-    Dim chrASCII, C, j, k, u, FirstElement, MatchLength, ElementLength As Long
+    Dim chrASCII, c, j, k, u, FirstElement, MatchLength, ElementLength As Long
     Dim Wrd2, Ltr, LtrCode, LtrFmt, FmtCode, WrdCodeSimple, WrdCodeSimple2 As String
     Dim Charac, Crib, Filler, charac_ASCII, charCategory As String
     Dim IsotopeFound As Boolean
@@ -931,12 +951,12 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
     If WrdCode = "" Then WrdCode = GetWrdCode(Wrd)
     
     ' Simply the number code
-    WrdCodeSimple = Replace(WrdCode, "Ee", "E")
+    WrdCodeSimple = replace(WrdCode, "Ee", "E")
     FmtCode = WrdCode
     
     ' Simply the number code (again)
-    WrdCodeSimple2 = Replace(WrdCodeSimple, "NNN", "N")
-    WrdCodeSimple2 = Replace(WrdCodeSimple2, "NN", "N")
+    WrdCodeSimple2 = replace(WrdCodeSimple, "NNN", "N")
+    WrdCodeSimple2 = replace(WrdCodeSimple2, "NN", "N")
 
     ' ======================================================
     ' If last character is plus or minus sign, it's an ion
@@ -945,10 +965,10 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
     
         ' Monoatomic ions, e.g. Na+, F-, Mg2+, N3-
         If WrdCodeSimple = "ES" Or WrdCodeSimple = "ENS" Then
-            FmtCode = Replace(FmtCode, "E", "n")
-            FmtCode = Replace(FmtCode, "e", "n")
-            FmtCode = Replace(FmtCode, "N", "u")
-            FmtCode = Replace(FmtCode, "S", "u")
+            FmtCode = replace(FmtCode, "E", "n")
+            FmtCode = replace(FmtCode, "e", "n")
+            FmtCode = replace(FmtCode, "N", "u")
+            FmtCode = replace(FmtCode, "S", "u")
                     
         ElseIf WrdCodeSimple = "ENNS" Or WrdCodeSimple = "NENNS" Then  ' e.g. Hg22+
             FmtCode = Left(FmtCode, Len(FmtCode) - 3) & "duu"
@@ -989,22 +1009,22 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
         Wrd2 = Wrd
         ' For nuclear isomers, e.g. 60mCo, remove the 'm' before searching
         If InStr(Wrd2, "m") > 1 And InStr(Wrd2, "m") < Len(Wrd) Then
-            Wrd2 = Replace(Wrd2, "m", "")
+            Wrd2 = replace(Wrd2, "m", "")
         End If
         ' For nuclear isomers, e.g. 240fPu, remove the 'f' before searching
         If InStr(Wrd2, "f") > 1 And InStr(Wrd2, "f") < Len(Wrd) Then
-            Wrd2 = Replace(Wrd2, "f", "")
+            Wrd2 = replace(Wrd2, "f", "")
         End If
         If IsInArray(Wrd2, ArrayIsotopes) Then
            ' format as isotope
-           FmtCode = Replace(FmtCode, "N", "u")
-           FmtCode = Replace(FmtCode, "E", "n")
-           FmtCode = Replace(FmtCode, "e", "n")
+           FmtCode = replace(FmtCode, "N", "u")
+           FmtCode = replace(FmtCode, "E", "n")
+           FmtCode = replace(FmtCode, "e", "n")
         Else
            ' format all normal
-           FmtCode = Replace(FmtCode, "N", "n")
-           FmtCode = Replace(FmtCode, "E", "n")
-           FmtCode = Replace(FmtCode, "e", "n")
+           FmtCode = replace(FmtCode, "N", "n")
+           FmtCode = replace(FmtCode, "E", "n")
+           FmtCode = replace(FmtCode, "e", "n")
         End If
     
     ElseIf WrdCodeSimple2 = "ESN" And InStr(Wrd, "-") > 0 Then
@@ -1014,35 +1034,35 @@ Function GetFrmCode(ByVal Wrd As String, Optional ByVal WrdCode As String = "") 
         Wrd2 = Wrd2 & Left(Wrd, InStr(Wrd, "-") - 1)
         If IsInArray(Wrd2, ArrayIsotopes) Then
            ' format as isotope
-           FmtCode = Replace(FmtCode, "N", "n")
-           FmtCode = Replace(FmtCode, "E", "n")
-           FmtCode = Replace(FmtCode, "e", "n")
+           FmtCode = replace(FmtCode, "N", "n")
+           FmtCode = replace(FmtCode, "E", "n")
+           FmtCode = replace(FmtCode, "e", "n")
         End If
     End If
         
     If WrdCodeSimple2 <> "NE" Then    ' not an ion or an isotope
         
         ' For decimal subscripts, replace point with number
-        FmtCode = Replace(FmtCode, "NPN", "NNN")
+        FmtCode = replace(FmtCode, "NPN", "NNN")
         
         ' If term doesn't start with element, e.g. 2H2O
         FirstElement = InStr(FmtCode, "E")
         ' numbers before first element not subscript, unless representing optically active, e.g. (+) or (-)
         If FirstElement > 1 And Left(WrdCode, 3) <> "BSB" Then
-            FmtCode = Replace(Left(FmtCode, FirstElement - 1), "N", "n") & Replace(FmtCode, "N", "d", Start:=FirstElement)
+            FmtCode = replace(Left(FmtCode, FirstElement - 1), "N", "n") & replace(FmtCode, "N", "d", Start:=FirstElement)
         Else    ' remaining numbers are subscript
-            FmtCode = Replace(FmtCode, "N", "d")
+            FmtCode = replace(FmtCode, "N", "d")
         End If
         
         ' =========================
         ' Format other characters
         ' =========================
-        FmtCode = Replace(FmtCode, "E", "n")
-        FmtCode = Replace(FmtCode, "e", "n")
-        FmtCode = Replace(FmtCode, "B", "n")
-        FmtCode = Replace(FmtCode, "Q", "n")
-        FmtCode = Replace(FmtCode, "*", "u")
-        FmtCode = Replace(FmtCode, "r", "u")
+        FmtCode = replace(FmtCode, "E", "n")
+        FmtCode = replace(FmtCode, "e", "n")
+        FmtCode = replace(FmtCode, "B", "n")
+        FmtCode = replace(FmtCode, "Q", "n")
+        FmtCode = replace(FmtCode, "*", "u")
+        FmtCode = replace(FmtCode, "r", "u")
           
           
         ' =========================================================
@@ -1518,5 +1538,3 @@ Private Function CountChars(ByVal WorkPara As String, ByVal SearchString As Stri
     CountChars = Count
     
 End Function
-
-
